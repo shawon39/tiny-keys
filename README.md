@@ -49,6 +49,26 @@ anywhere and deploys to **GitHub Pages** with no build step.
   repeat, so it stays fresh over many sessions.
 - **Respects `prefers-reduced-motion`** for sensitive setups.
 
+## 🔊 No sound on a phone/tablet?
+
+Web audio on mobile has two gotchas the app handles, plus one the device controls:
+
+- **It unlocks on first touch.** Browsers block audio until a user gesture, so the
+  first tap (the **Play** button) wakes it. The app plays a silent buffer inside
+  that gesture and re-resumes on every press — the standard iOS/Android unlock.
+- **Check the ringer / silent switch + volume.** On iPhone, the **side mute
+  switch** (or Silent Mode) mutes web audio — flip it off and turn the volume up.
+  No web page can override the hardware mute switch, so this is the #1 thing to
+  check if it's still quiet.
+- **Bangla speech needs a Bangla voice on the device.** The musical tones always
+  play, but the *spoken names* use the device's installed text-to-speech voices.
+  For spoken **বাংলা**, add a Bengali voice:
+  - **iOS/iPadOS:** Settings → Accessibility → Spoken Content → Voices → **Bengali**.
+  - **Android:** Settings → Accessibility → Text-to-speech → install/enable Bengali
+    (Google TTS).
+  If no Bangla voice is present, names stay silent (tones still play); switch the
+  language to **English** in Settings for spoken English on any device.
+
 ## 📁 Project structure
 
 ```

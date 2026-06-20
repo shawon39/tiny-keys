@@ -18,6 +18,7 @@
   var masterGain = null;     // master volume node, also caps simultaneous loudness
   var soundOn = true;
   var speechOn = true;
+  var unlocked = false;      // ran the one-time in-gesture play that iOS requires
   var voicesList = [];       // all available speech-synthesis voices
   var lastSpeak = 0;         // throttle stamp for speech during rapid mashing
 
@@ -52,7 +53,12 @@
 
   /* ---- Public API ---------------------------------------------------------- */
   var Audio = {
-    /** Create/resume the AudioContext from within a user gesture. */
+    /**
+     * Create/resume the AudioContext from within a user gesture. Must be called
+     * from a real tap/click. On iOS, resume() alone is NOT enough — the engine
+     * only fully wakes if a sound is actually played inside the gesture, so we
+     * also play a one-sample silent buffer the first time.
+     */
     unlock: function () {
       try {
         if (!ctx && AudioCtx) {
@@ -61,9 +67,26 @@
           masterGain.gain.value = 0.5; // keep things soft on little ears
           masterGain.connect(ctx.destination);
         }
-        if (ctx && ctx.state === 'suspended') ctx.resume();
+        if (!ctx) return;
+        if (ctx.state !== 'running' && ctx.resume) {
+          var r = ctx.resume();
+          if (r && r.catch) r.catch(function () {});
+        }
+        if (!unlocked) {
+          try {
+            var buf = ctx.createBuffer(1, 1, 22050);
+            var src = ctx.createBufferSource();
+            src.buffer = buf;
+            src.connect(ctx.destination);
+            if (src.start) src.start(0); else if (src.noteOn) src.noteOn(0);
+          } catch (e) { /* ignore */ }
+          unlocked = true;
+        }
       } catch (e) { /* ignore — game still works silently */ }
     },
+
+    /** True once audio has been unlocked by a user gesture. */
+    isReady: function () { return !!ctx && ctx.state === 'running'; },
 
     /** Pause audio when the tab is backgrounded. */
     suspend: function () {
@@ -81,6 +104,9 @@
     /** A short, soft musical tone. Safe to call on every single press. */
     playTone: function () {
       if (!soundOn || !ctx) return;
+      // A backgrounded tab or the OS can silently re-suspend the context; on
+      // mobile especially, nudge it awake before every tone.
+      if (ctx.state !== 'running' && ctx.resume) { try { ctx.resume(); } catch (e) {} }
       try {
         var now = ctx.currentTime;
         var osc = ctx.createOscillator();
@@ -122,10 +148,15 @@
       if (t - lastSpeak < 320) return; // at most ~3 words/sec
       if (!voicesList.length) refreshVoices();
       var v = voiceFor(lang);
-      if (lang === 'bn' && !v) return; // no Bangla voice on this device — skip
+      // Only skip Bangla when the voice list is loaded AND truly has no Bangla
+      // voice. On mobile getVoices() is briefly empty, so skipping on a null voice
+      // alone would wrongly silence Bangla even when a voice exists / loads late.
+      if (lang === 'bn' && !v && voicesList.length > 0) return;
       try {
         var ss = global.speechSynthesis;
-        ss.cancel();
+        // Cancel only when something is actually queued. Calling cancel() before
+        // every speak() triggers an iOS Safari bug that drops the utterance.
+        if (ss.speaking || ss.pending) { try { ss.cancel(); } catch (e) {} }
         var u = new SpeechSynthesisUtterance(name);
         u.rate = 0.9;
         u.pitch = 1.3; // higher pitch reads as friendly/child-like

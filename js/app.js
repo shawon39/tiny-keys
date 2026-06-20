@@ -384,6 +384,19 @@
     global.addEventListener('keydown', onKeyDown, true);
     el.stage.addEventListener('pointerdown', onPointerDown, { passive: false });
 
+    // Belt-and-braces mobile audio unlock: wake the AudioContext on the very
+    // first user gesture (touch/click/key), in case the Play tap alone wasn't
+    // enough for iOS. Self-removes after firing once.
+    function firstGestureUnlock() {
+      if (audio) audio.unlock();
+      doc.removeEventListener('pointerdown', firstGestureUnlock, true);
+      doc.removeEventListener('touchend', firstGestureUnlock, true);
+      doc.removeEventListener('keydown', firstGestureUnlock, true);
+    }
+    doc.addEventListener('pointerdown', firstGestureUnlock, true);
+    doc.addEventListener('touchend', firstGestureUnlock, true);
+    doc.addEventListener('keydown', firstGestureUnlock, true);
+
     // Welcome buttons
     doc.getElementById('play').addEventListener('click', startPlay);
     doc.getElementById('welcome-settings').addEventListener('click', openSettings);
