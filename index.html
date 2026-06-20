@@ -60,47 +60,55 @@
   <section id="welcome" class="overlay">
     <div class="card">
       <div class="welcome-emojis" aria-hidden="true">🐶 🐱 ⭐ 🦄 🎈</div>
-      <h1>Baby Keyboard Game</h1>
-      <p class="lead">Press <strong>any key</strong> — or tap the screen!</p>
+      <h1 data-i18n="title">Baby Keyboard Game</h1>
+      <p class="lead" data-i18n="lead">Press <strong>any key</strong> — or tap the screen!</p>
 
-      <button id="play" class="btn btn--big" type="button">▶&nbsp; Play</button>
+      <button id="play" class="btn btn--big" type="button" data-i18n="play">▶&nbsp; Play</button>
 
-      <button id="welcome-settings" class="btn btn--ghost" type="button">⚙️&nbsp; Settings</button>
+      <button id="welcome-settings" class="btn btn--ghost" type="button" data-i18n="welcomeSettings">⚙️&nbsp; Settings</button>
 
-      <p class="hint">Tip: during play, <strong>hold</strong> the&nbsp;⚙️&nbsp;in the corner for 1.5s to change settings.</p>
+      <p class="hint" data-i18n="hint">Tip: during play, <strong>hold</strong> the&nbsp;⚙️&nbsp;in the corner for 1.5s to change settings.</p>
     </div>
   </section>
 
   <!-- Settings panel. Shared by the welcome "Settings" button and the hold-gear. -->
   <section id="settings" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
     <div class="card">
-      <h2 id="settings-title">Settings</h2>
+      <h2 id="settings-title" data-i18n="settingsTitle">Settings</h2>
 
       <div class="field">
-        <span class="field__label">What appears?</span>
-        <div class="segmented" role="radiogroup" aria-label="What appears on key press">
-          <button class="seg" data-mode="animal" type="button" role="radio" aria-checked="true">🐾 Animals</button>
-          <button class="seg" data-mode="emoji" type="button" role="radio" aria-checked="false">😀 Emojis</button>
+        <span class="field__label" data-i18n="fieldLang">Language</span>
+        <div class="segmented" role="radiogroup" data-setting="lang" aria-label="Language">
+          <button class="seg" data-value="en" type="button" role="radio" aria-checked="false">English</button>
+          <button class="seg" data-value="bn" type="button" role="radio" aria-checked="false">বাংলা</button>
         </div>
       </div>
 
       <div class="field">
-        <span class="field__label">Sound effects</span>
+        <span class="field__label" data-i18n="fieldAppears">What appears?</span>
+        <div class="segmented" role="radiogroup" data-setting="mode" aria-label="What appears on key press">
+          <button class="seg" data-value="animal" type="button" role="radio" aria-checked="false" data-i18n="segAnimals">🐾 Animals</button>
+          <button class="seg" data-value="emoji" type="button" role="radio" aria-checked="false" data-i18n="segEmojis">😀 Emojis</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="field__label" data-i18n="fieldSound">Sound effects</span>
         <button class="toggle" id="toggle-sound" type="button" role="switch" aria-checked="true">
           <span class="toggle__knob"></span><span class="toggle__text">On</span>
         </button>
       </div>
 
       <div class="field">
-        <span class="field__label">Say the name</span>
+        <span class="field__label" data-i18n="fieldSpeech">Say the name</span>
         <button class="toggle" id="toggle-speech" type="button" role="switch" aria-checked="true">
           <span class="toggle__knob"></span><span class="toggle__text">On</span>
         </button>
       </div>
 
       <div class="settings-actions">
-        <button id="settings-fullscreen" class="btn btn--ghost" type="button">⛶&nbsp; Fullscreen</button>
-        <button id="settings-done" class="btn btn--big" type="button">Done</button>
+        <button id="settings-fullscreen" class="btn btn--ghost" type="button" data-i18n="fullscreen">⛶&nbsp; Fullscreen</button>
+        <button id="settings-done" class="btn btn--big" type="button" data-i18n="done">Done</button>
       </div>
     </div>
   </section>

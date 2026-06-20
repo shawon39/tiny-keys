@@ -18,7 +18,7 @@
   var masterGain = null;     // master volume node, also caps simultaneous loudness
   var soundOn = true;
   var speechOn = true;
-  var voice = null;          // preferred cheerful voice for speech
+  var voicesList = [];       // all available speech-synthesis voices
   var lastSpeak = 0;         // throttle stamp for speech during rapid mashing
 
   // C-major pentatonic across two octaves — any combination sounds happy.
@@ -27,23 +27,27 @@
   var AudioCtx = global.AudioContext || global.webkitAudioContext || null;
 
   /* ---- Speech voice selection --------------------------------------------- */
-  function pickVoice() {
+  function refreshVoices() {
     if (!('speechSynthesis' in global)) return;
-    try {
-      var voices = global.speechSynthesis.getVoices() || [];
-      if (!voices.length) return;
-      // Prefer a local English voice; fall back to any English, then any voice.
-      voice =
-        voices.find(function (v) { return v.lang && v.lang.indexOf('en') === 0 && v.localService; }) ||
-        voices.find(function (v) { return v.lang && v.lang.indexOf('en') === 0; }) ||
-        voices[0];
-    } catch (e) { /* ignore */ }
+    try { voicesList = global.speechSynthesis.getVoices() || []; }
+    catch (e) { voicesList = []; }
+  }
+
+  // Best available voice for a language ('bn' | 'en'): prefer a local (offline)
+  // voice whose code starts with the wanted prefix, then any matching voice.
+  function voiceFor(lang) {
+    var want = (lang === 'bn') ? 'bn' : 'en';
+    function match(v) {
+      return v.lang && v.lang.toLowerCase().replace('_', '-').indexOf(want) === 0;
+    }
+    return voicesList.filter(function (v) { return match(v) && v.localService; })[0] ||
+           voicesList.filter(match)[0] || null;
   }
 
   if ('speechSynthesis' in global) {
-    pickVoice();
+    refreshVoices();
     // getVoices() is populated asynchronously in some browsers.
-    try { global.speechSynthesis.onvoiceschanged = pickVoice; } catch (e) { /* ignore */ }
+    try { global.speechSynthesis.onvoiceschanged = refreshVoices; } catch (e) { /* ignore */ }
   }
 
   /* ---- Public API ---------------------------------------------------------- */
@@ -100,14 +104,25 @@
       } catch (e) { /* ignore */ }
     },
 
+    /** Is a voice available for this language ('bn' | 'en') on this device? */
+    hasVoice: function (lang) {
+      if (!voicesList.length) refreshVoices();
+      return !!voiceFor(lang);
+    },
+
     /**
-     * Speak a name cheerfully. Throttled so a mashing toddler doesn't queue a
-     * minute-long monologue; cancel() first so the latest word wins.
+     * Speak a name cheerfully in the given language ('bn' | 'en'). Throttled so a
+     * mashing toddler doesn't queue a minute-long monologue; cancel() first so the
+     * latest word wins. If no Bangla voice exists we stay silent rather than letting
+     * an English engine mangle the Bengali text.
      */
-    speak: function (name, now) {
+    speak: function (name, lang, now) {
       if (!speechOn || !name || !('speechSynthesis' in global)) return;
       var t = now || Date.now();
       if (t - lastSpeak < 320) return; // at most ~3 words/sec
+      if (!voicesList.length) refreshVoices();
+      var v = voiceFor(lang);
+      if (lang === 'bn' && !v) return; // no Bangla voice on this device — skip
       try {
         var ss = global.speechSynthesis;
         ss.cancel();
@@ -115,7 +130,8 @@
         u.rate = 0.9;
         u.pitch = 1.3; // higher pitch reads as friendly/child-like
         u.volume = 1;
-        if (voice) u.voice = voice;
+        u.lang = (lang === 'bn') ? 'bn-IN' : 'en-US';
+        if (v) u.voice = v;
         ss.speak(u);
         lastSpeak = t; // only a successfully-queued utterance consumes a slot
       } catch (e) { /* ignore */ }

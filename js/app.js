@@ -19,14 +19,60 @@
   var fx = (global.BKG && global.BKG.effects) || null;
 
   /* ---- Settings store ----------------------------------------------------- */
-  var DEFAULTS = { mode: 'animal', sound: 'on', speech: 'on' };
+  // Default language is Bangla (বাংলা), as requested.
+  var DEFAULTS = { lang: 'bn', mode: 'animal', sound: 'on', speech: 'on' };
   var ALLOWED = {
+    lang: { en: 1, bn: 1 },
     mode: { animal: 1, emoji: 1 },
     sound: { on: 1, off: 1 },
     speech: { on: 1, off: 1 }
   };
-  var settings = { mode: 'animal', sound: 'on', speech: 'on' };
+  var settings = { lang: 'bn', mode: 'animal', sound: 'on', speech: 'on' };
   var memoryStore = {}; // fallback when localStorage is unavailable
+
+  /* ---- Localisation (English / বাংলা) ------------------------------------- */
+  var I18N = {
+    en: {
+      title: 'Baby Keyboard Game',
+      lead: 'Press <strong>any key</strong> — or tap the screen!',
+      play: '▶&nbsp; Play',
+      welcomeSettings: '⚙️&nbsp; Settings',
+      hint: 'Tip: during play, <strong>hold</strong> the&nbsp;⚙️&nbsp;in the corner for 1.5s to change settings.',
+      settingsTitle: 'Settings',
+      fieldLang: 'Language',
+      fieldAppears: 'What appears?',
+      segAnimals: '🐾 Animals',
+      segEmojis: '😀 Emojis',
+      fieldSound: 'Sound effects',
+      fieldSpeech: 'Say the name',
+      fullscreen: '⛶&nbsp; Fullscreen',
+      done: 'Done',
+      on: 'On',
+      off: 'Off'
+    },
+    bn: {
+      title: 'শিশুর কীবোর্ড খেলা',
+      lead: 'যেকোনো <strong>বোতাম</strong> চাপো — বা স্ক্রিনে ছোঁয়াও!',
+      play: '▶&nbsp; খেলো',
+      welcomeSettings: '⚙️&nbsp; সেটিংস',
+      hint: 'টিপস: খেলার সময় সেটিংস বদলাতে কোণার&nbsp;⚙️&nbsp;চিহ্নে&nbsp;১.৫&nbsp;সেকেন্ড <strong>চেপে ধরো</strong>।',
+      settingsTitle: 'সেটিংস',
+      fieldLang: 'ভাষা',
+      fieldAppears: 'কী দেখা যাবে?',
+      segAnimals: '🐾 প্রাণী',
+      segEmojis: '😀 ইমোজি',
+      fieldSound: 'শব্দ',
+      fieldSpeech: 'নাম বলানো',
+      fullscreen: '⛶&nbsp; ফুলস্ক্রিন',
+      done: 'ঠিক আছে',
+      on: 'চালু',
+      off: 'বন্ধ'
+    }
+  };
+  function t(key) {
+    var dict = I18N[settings.lang] || I18N.bn;
+    return dict[key] != null ? dict[key] : key;
+  }
 
   function loadSettings() {
     for (var key in DEFAULTS) {
@@ -53,7 +99,7 @@
   var bags = { animal: makeBag(DATA.animals), emoji: makeBag(DATA.emojis) };
 
   function draw(state) {
-    if (!state.pool.length) return { char: '⭐', name: 'Star' };
+    if (!state.pool.length) return { char: '⭐', en: 'Star', bn: 'তারা' };
     if (!state.bag.length) {
       state.bag = state.pool.slice();
       for (var i = state.bag.length - 1; i > 0; i--) {
@@ -109,6 +155,7 @@
     if (!fx) return;
     var now = Date.now();
     var item = draw(bags[settings.mode] || bags.animal);
+    var name = item[settings.lang] || item.en;
 
     fx.spawnItem(item, x, y);
     fx.ripple(x, y);
@@ -116,7 +163,7 @@
     fx.flash();
     if (audio) {
       audio.playTone();
-      audio.speak(item.name, now);
+      audio.speak(name, settings.lang, now);
     }
   }
 
@@ -205,39 +252,72 @@
   }
 
   function syncSettingsUI() {
-    // Mode segmented control (radiogroup) — aria-checked + roving tabindex.
-    var segs = el.settings.querySelectorAll('.seg');
-    for (var i = 0; i < segs.length; i++) {
-      var on = segs[i].getAttribute('data-mode') === settings.mode;
-      segs[i].setAttribute('aria-checked', on ? 'true' : 'false');
-      segs[i].setAttribute('tabindex', on ? '0' : '-1');
+    // Every segmented control (radiogroup) — aria-checked + roving tabindex,
+    // driven generically by each group's data-setting / each option's data-value.
+    var groups = el.settings.querySelectorAll('.segmented');
+    for (var g = 0; g < groups.length; g++) {
+      var setting = groups[g].getAttribute('data-setting');
+      var segs = groups[g].querySelectorAll('.seg');
+      for (var i = 0; i < segs.length; i++) {
+        var on = segs[i].getAttribute('data-value') === settings[setting];
+        segs[i].setAttribute('aria-checked', on ? 'true' : 'false');
+        segs[i].setAttribute('tabindex', on ? '0' : '-1');
+      }
     }
     // Toggles
     setToggle(el.toggleSound, settings.sound === 'on');
     setToggle(el.toggleSpeech, settings.speech === 'on');
   }
 
-  // Arrow-key navigation for the mode radiogroup (WAI-ARIA radio pattern).
+  // Apply a setting change from a segmented control, with side effects.
+  function changeSetting(setting, value) {
+    if (!setting || !ALLOWED[setting] || !ALLOWED[setting][value]) return;
+    saveSetting(setting, value);
+    if (setting === 'lang') applyLanguage(value);
+    syncSettingsUI();
+  }
+
+  // Swap every translatable label to the chosen language.
+  function applyLanguage(lang) {
+    var dict = I18N[lang] || I18N.bn;
+    var nodes = doc.querySelectorAll('[data-i18n]');
+    for (var i = 0; i < nodes.length; i++) {
+      var key = nodes[i].getAttribute('data-i18n');
+      if (dict[key] != null) nodes[i].innerHTML = dict[key];
+    }
+    try { doc.documentElement.setAttribute('lang', lang === 'bn' ? 'bn' : 'en'); } catch (e) {}
+    // Localise the radiogroup aria-labels (not visible text, so not data-i18n).
+    var langGroup = el.settings.querySelector('.segmented[data-setting="lang"]');
+    var modeGroup = el.settings.querySelector('.segmented[data-setting="mode"]');
+    if (langGroup && dict.fieldLang) langGroup.setAttribute('aria-label', dict.fieldLang);
+    if (modeGroup && dict.fieldAppears) modeGroup.setAttribute('aria-label', dict.fieldAppears);
+    // On/Off labels live in JS, so refresh them too.
+    setToggle(el.toggleSound, settings.sound === 'on');
+    setToggle(el.toggleSpeech, settings.speech === 'on');
+  }
+
+  // Arrow-key navigation within a segmented radiogroup (WAI-ARIA radio pattern).
   function onSegKeyDown(e) {
     var k = e.key;
     if (k !== 'ArrowLeft' && k !== 'ArrowRight' && k !== 'ArrowUp' && k !== 'ArrowDown') return;
     e.preventDefault();
-    var segs = el.settings.querySelectorAll('.seg');
+    var group = e.currentTarget;
+    var setting = group.getAttribute('data-setting');
+    var segs = group.querySelectorAll('.seg');
     var current = 0;
     for (var i = 0; i < segs.length; i++) {
-      if (segs[i].getAttribute('data-mode') === settings.mode) { current = i; break; }
+      if (segs[i].getAttribute('data-value') === settings[setting]) { current = i; break; }
     }
     var dir = (k === 'ArrowRight' || k === 'ArrowDown') ? 1 : -1;
     var next = (current + dir + segs.length) % segs.length;
-    saveSetting('mode', segs[next].getAttribute('data-mode'));
-    syncSettingsUI();
+    changeSetting(setting, segs[next].getAttribute('data-value'));
     try { segs[next].focus(); } catch (x) {}
   }
 
   function setToggle(btn, on) {
     btn.setAttribute('aria-checked', on ? 'true' : 'false');
     var txt = btn.querySelector('.toggle__text');
-    if (txt) txt.textContent = on ? 'On' : 'Off';
+    if (txt) txt.textContent = t(on ? 'on' : 'off');
   }
 
   /* ---- Toddler-proof hold-to-open gear ------------------------------------ */
@@ -308,13 +388,17 @@
     doc.getElementById('play').addEventListener('click', startPlay);
     doc.getElementById('welcome-settings').addEventListener('click', openSettings);
 
-    // Settings: mode (click + arrow-key navigation)
+    // Settings: segmented controls — language + mode (click + arrow-key nav)
     el.settings.addEventListener('click', function (e) {
       var seg = e.target.closest ? e.target.closest('.seg') : null;
-      if (seg) { saveSetting('mode', seg.getAttribute('data-mode')); syncSettingsUI(); }
+      if (!seg) return;
+      var group = seg.parentNode;
+      changeSetting(group.getAttribute('data-setting'), seg.getAttribute('data-value'));
     });
-    var segWrap = el.settings.querySelector('.segmented');
-    if (segWrap) segWrap.addEventListener('keydown', onSegKeyDown);
+    var groups = el.settings.querySelectorAll('.segmented');
+    for (var gi = 0; gi < groups.length; gi++) {
+      groups[gi].addEventListener('keydown', onSegKeyDown);
+    }
     // Settings: toggles
     el.toggleSound.addEventListener('click', function () {
       var on = settings.sound !== 'on';
@@ -358,6 +442,7 @@
     // Last-resort: never let an unexpected error surface to the child.
     global.addEventListener('error', function () { /* swallow */ });
 
+    applyLanguage(settings.lang); // render UI in the saved/default language (Bangla)
     syncSettingsUI();
   }
 

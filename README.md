@@ -15,14 +15,19 @@ anywhere and deploys to **GitHub Pages** with no build step.
   random spot on screen.
 - **Tap / touch works too.** On a tablet, every tap spawns an item right where
   the finger lands (multi-touch friendly) — perfect for little hands.
-- **It talks.** A cheerful voice names each item ("Dog!", "Star!") via the
-  browser's built-in speech synthesis.
+- **It talks — in Bangla or English.** A cheerful voice names each item
+  ("কুকুর!", "তারা!" / "Dog!", "Star!") via the browser's built-in speech
+  synthesis. **Bangla (বাংলা) is the default**; a Language toggle in Settings
+  switches the whole UI and the spoken names between **বাংলা** and **English**
+  (it falls back silently if the device has no Bangla voice installed).
 - **It sings.** A soft, musical "boop" (Web Audio, C-major pentatonic) plays on
   every press — even random mashing sounds nice.
 - **It celebrates.** Confetti, an expanding ripple, a whole-screen colour flash,
   and a slowly drifting rainbow background.
 - **Two modes.** A settings panel toggles between **🐾 Animals** (60+ friendly
   animals) and **😀 Emojis** (stars, food, vehicles, happy faces…).
+- **Two languages.** **বাংলা** (default) and **English**, toggled in Settings and
+  remembered across sessions.
 
 ## 🛡️ Built for toddlers (and the parents who hand over the device)
 

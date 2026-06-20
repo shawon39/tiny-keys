@@ -5,7 +5,8 @@
    ========================================================================== */
 
 :root {
-  --font: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial,
+    "Hind Siliguri", "Noto Sans Bengali", "Kohinoor Bangla", "Bangla Sangam MN", "Nirmala UI", sans-serif;
   /* Emoji rendered as system glyphs use this stack as a fallback before Twemoji. */
   --emoji-font: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif;
   --accent: #7c4dff;
