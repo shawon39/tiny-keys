@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Baby Keyboard Game — Press any key!</title>
+
+  <!-- Lock the viewport so a toddler can't pinch/double-tap-zoom out of the game. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="description" content="A delightful keyboard game for toddlers. Press any key and a friendly animal or emoji pops onto the screen with sound, colour and confetti." />
+  <meta name="theme-color" content="#7c4dff" />
+
+  <!-- Fuller-screen behaviour when added to a phone/tablet home screen. -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <!-- Emoji favicon, inline so there is no extra file to 404 on GitHub Pages. -->
+  <link rel="icon" href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'&gt;&lt;text y='.9em' font-size='90'&gt;🐶&lt;/text&gt;&lt;/svg&gt;" />
+
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="stylesheet" href="./css/styles.css" />
+
+  <!--
+    Authentic, version-pinned CDNs (verified live 2026-06-20):
+      • canvas-confetti — celebratory particle bursts        (global: window.confetti)
+      • @twemoji/api    — render emoji as crisp, OS-consistent SVG (global: window.twemoji)
+    Both are loaded with `defer` so they never block first paint, and every use is
+    guarded with `if (window.confetti)` / `if (window.twemoji)` so the game degrades
+    gracefully (native emoji + CSS particles) if a CDN is ever blocked or offline.
+  -->
+  <script defer src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@twemoji/api@17.0.3/dist/twemoji.min.js"></script>
+
+  <!-- Game scripts. `defer` guarantees they run in order, after the DOM is parsed. -->
+  <script defer src="./js/data.js"></script>
+  <script defer src="./js/audio.js"></script>
+  <script defer src="./js/effects.js"></script>
+  <script defer src="./js/app.js"></script>
+</head>
+
+<body>
+  <!-- The full-screen playfield: every key press / tap lands here. -->
+  <main id="stage" aria-hidden="true">
+    <div id="fx-layer"></div>
+  </main>
+
+  <!-- A brief full-screen colour flash on each press (purely decorative). -->
+  <div id="flash" aria-hidden="true"></div>
+
+  <!-- Hold-to-open settings button (top-right). Toddler-proof: needs a 1.5s hold. -->
+  <button id="gear" type="button" title="Hold to open settings" aria-label="Hold to open settings">
+    <svg viewBox="0 0 48 48" class="gear-ring" aria-hidden="true">
+      <circle class="gear-ring__track" cx="24" cy="24" r="21"></circle>
+      <circle class="gear-ring__fill" cx="24" cy="24" r="21"></circle>
+    </svg>
+    <span class="gear-ico" aria-hidden="true">⚙️</span>
+  </button>
+
+  <!-- Welcome / start screen. The parent sets things up, then taps Play. -->
+  <section id="welcome" class="overlay">
+    <div class="card">
+      <div class="welcome-emojis" aria-hidden="true">🐶 🐱 ⭐ 🦄 🎈</div>
+      <h1>Baby Keyboard Game</h1>
+      <p class="lead">Press <strong>any key</strong> — or tap the screen!</p>
+
+      <button id="play" class="btn btn--big" type="button">▶&nbsp; Play</button>
+
+      <button id="welcome-settings" class="btn btn--ghost" type="button">⚙️&nbsp; Settings</button>
+
+      <p class="hint">Tip: during play, <strong>hold</strong> the&nbsp;⚙️&nbsp;in the corner for 1.5s to change settings.</p>
+    </div>
+  </section>
+
+  <!-- Settings panel. Shared by the welcome "Settings" button and the hold-gear. -->
+  <section id="settings" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="card">
+      <h2 id="settings-title">Settings</h2>
+
+      <div class="field">
+        <span class="field__label">What appears?</span>
+        <div class="segmented" role="radiogroup" aria-label="What appears on key press">
+          <button class="seg" data-mode="animal" type="button" role="radio" aria-checked="true">🐾 Animals</button>
+          <button class="seg" data-mode="emoji" type="button" role="radio" aria-checked="false">😀 Emojis</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="field__label">Sound effects</span>
+        <button class="toggle" id="toggle-sound" type="button" role="switch" aria-checked="true">
+          <span class="toggle__knob"></span><span class="toggle__text">On</span>
+        </button>
+      </div>
+
+      <div class="field">
+        <span class="field__label">Say the name</span>
+        <button class="toggle" id="toggle-speech" type="button" role="switch" aria-checked="true">
+          <span class="toggle__knob"></span><span class="toggle__text">On</span>
+        </button>
+      </div>
+
+      <div class="settings-actions">
+        <button id="settings-fullscreen" class="btn btn--ghost" type="button">⛶&nbsp; Fullscreen</button>
+        <button id="settings-done" class="btn btn--big" type="button">Done</button>
+      </div>
+    </div>
+  </section>
+
+  <noscript>
+    <p style="font:600 18px/1.5 system-ui,sans-serif;color:#fff;text-align:center;padding:2rem;">
+      Please enable JavaScript to play the Baby Keyboard Game.
+    </p>
+  </noscript>
+</body>
+</html>

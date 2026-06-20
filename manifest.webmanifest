@@ -1,0 +1,19 @@
+{
+  "name": "Baby Keyboard Game",
+  "short_name": "Baby Keys",
+  "description": "Press any key and a friendly animal or emoji pops up with sound and confetti.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#1b1030",
+  "theme_color": "#7c4dff",
+  "icons": [
+    {
+      "src": "./assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

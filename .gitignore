@@ -1,0 +1,5 @@
+# Local editor / preview config (not needed for deployment)
+.claude/
+
+# macOS
+.DS_Store
