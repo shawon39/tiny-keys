@@ -84,12 +84,10 @@
         </div>
       </div>
 
-      <div class="field">
+      <div class="field field--stack">
         <span class="field__label" data-i18n="fieldAppears">What appears?</span>
-        <div class="segmented" role="radiogroup" data-setting="mode" aria-label="What appears on key press">
-          <button class="seg" data-value="animal" type="button" role="radio" aria-checked="false" data-i18n="segAnimals">🐾 Animals</button>
-          <button class="seg" data-value="emoji" type="button" role="radio" aria-checked="false" data-i18n="segEmojis">😀 Emojis</button>
-        </div>
+        <!-- Category chips are injected by app.js from the data. -->
+        <div class="segmented segmented--wrap" role="radiogroup" data-setting="category" id="cat-group" aria-label="What appears on key press"></div>
       </div>
 
       <div class="field">

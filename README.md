@@ -24,8 +24,10 @@ anywhere and deploys to **GitHub Pages** with no build step.
   every press — even random mashing sounds nice.
 - **It celebrates.** Confetti, an expanding ripple, a whole-screen colour flash,
   and a slowly drifting rainbow background.
-- **Two modes.** A settings panel toggles between **🐾 Animals** (60+ friendly
-  animals) and **😀 Emojis** (stars, food, vehicles, happy faces…).
+- **Lots of categories.** A settings picker chooses what appears — **🌈 All**
+  (everything mixed, the default) or focus on one: **🐶 Animals**, **👨‍👩‍👧‍👦 Family**
+  (মা, বাবা, দাদা/নানা, চাচা/মামা…), **🍎 Fruits**, **🥕 Vegetables**, **🍚 Food**,
+  **🚗 Vehicles**, **🌳 Nature**, **😀 Faces**, **🧸 Things** — 200+ items in all.
 - **Two languages.** **বাংলা** (default) and **English**, toggled in Settings and
   remembered across sessions.
 

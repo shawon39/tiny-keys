@@ -321,6 +321,10 @@ body.playing #gear { cursor: none; }
 }
 .field__label { font-size: 17px; font-weight: 600; }
 
+/* A field whose control sits BELOW its label (used by the category grid). */
+.field--stack { flex-direction: column; align-items: stretch; }
+.field--stack .field__label { margin-bottom: 2px; }
+
 .segmented {
   display: flex;
   gap: 6px;
@@ -328,6 +332,10 @@ body.playing #gear { cursor: none; }
   padding: 5px;
   border-radius: 14px;
 }
+
+/* The category picker: many chips that wrap onto multiple rows. */
+.segmented--wrap { flex-wrap: wrap; justify-content: center; gap: 7px; }
+.segmented--wrap .seg { padding: 8px 12px; font-size: 14px; }
 .seg {
   font: inherit;
   font-weight: 700;

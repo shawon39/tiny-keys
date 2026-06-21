@@ -14,20 +14,34 @@
 (function (global, doc) {
   'use strict';
 
-  var DATA = global.GAME_DATA || { animals: [], emojis: [] };
+  var DATA = global.GAME_DATA || { categories: [] };
   var audio = (global.BKG && global.BKG.audio) || null;
   var fx = (global.BKG && global.BKG.effects) || null;
 
+  /* ---- Category index ----------------------------------------------------- */
+  var CATEGORIES = (DATA.categories || []).filter(function (c) {
+    return c && c.items && c.items.length;
+  });
+  var ALL_ITEMS = [];
+  var catItems = {}; // key -> items array
+  for (var ci = 0; ci < CATEGORIES.length; ci++) {
+    catItems[CATEGORIES[ci].key] = CATEGORIES[ci].items;
+    ALL_ITEMS = ALL_ITEMS.concat(CATEGORIES[ci].items);
+  }
+  catItems.all = ALL_ITEMS; // the virtual "everything mixed" category
+
   /* ---- Settings store ----------------------------------------------------- */
-  // Default language is Bangla (বাংলা), as requested.
-  var DEFAULTS = { lang: 'bn', mode: 'animal', sound: 'on', speech: 'on' };
+  // Defaults: Bangla language, and the "All" mix (most variety for a baby).
+  var DEFAULTS = { lang: 'bn', category: 'all', sound: 'on', speech: 'on' };
+  var catAllowed = { all: 1 };
+  for (var ck = 0; ck < CATEGORIES.length; ck++) catAllowed[CATEGORIES[ck].key] = 1;
   var ALLOWED = {
     lang: { en: 1, bn: 1 },
-    mode: { animal: 1, emoji: 1 },
+    category: catAllowed,
     sound: { on: 1, off: 1 },
     speech: { on: 1, off: 1 }
   };
-  var settings = { lang: 'bn', mode: 'animal', sound: 'on', speech: 'on' };
+  var settings = { lang: 'bn', category: 'all', sound: 'on', speech: 'on' };
   var memoryStore = {}; // fallback when localStorage is unavailable
 
   /* ---- Localisation (English / বাংলা) ------------------------------------- */
@@ -41,8 +55,7 @@
       settingsTitle: 'Settings',
       fieldLang: 'Language',
       fieldAppears: 'What appears?',
-      segAnimals: '🐾 Animals',
-      segEmojis: '😀 Emojis',
+      catAll: 'All',
       fieldSound: 'Sound effects',
       fieldSpeech: 'Say the name',
       fullscreen: '⛶&nbsp; Fullscreen',
@@ -59,8 +72,7 @@
       settingsTitle: 'সেটিংস',
       fieldLang: 'ভাষা',
       fieldAppears: 'কী দেখা যাবে?',
-      segAnimals: '🐾 প্রাণী',
-      segEmojis: '😀 ইমোজি',
+      catAll: 'সব',
       fieldSound: 'শব্দ',
       fieldSpeech: 'নাম বলানো',
       fullscreen: '⛶&nbsp; ফুলস্ক্রিন',
@@ -94,9 +106,13 @@
     try { global.localStorage.setItem('bkg.' + key, val); } catch (e) { /* in-memory only */ }
   }
 
-  /* ---- Shuffle-bag pickers (one per mode) --------------------------------- */
+  /* ---- Shuffle-bag pickers (one per category, created lazily) -------------- */
   function makeBag(pool) { return { pool: pool, bag: [], last: null }; }
-  var bags = { animal: makeBag(DATA.animals), emoji: makeBag(DATA.emojis) };
+  var bags = {};
+  function bagFor(key) {
+    if (!bags[key]) bags[key] = makeBag(catItems[key] || ALL_ITEMS);
+    return bags[key];
+  }
 
   function draw(state) {
     if (!state.pool.length) return { char: '⭐', en: 'Star', bn: 'তারা' };
@@ -154,7 +170,7 @@
   function celebrate(x, y) {
     if (!fx) return;
     var now = Date.now();
-    var item = draw(bags[settings.mode] || bags.animal);
+    var item = draw(bagFor(settings.category));
     var name = item[settings.lang] || item.en;
 
     fx.spawnItem(item, x, y);
@@ -251,6 +267,42 @@
     lastFocus = null;
   }
 
+  /* ---- Category picker chips (built from the data) ------------------------ */
+  function categoryChipLabel(value) {
+    if (value === 'all') return '🌈 ' + t('catAll');
+    for (var i = 0; i < CATEGORIES.length; i++) {
+      if (CATEGORIES[i].key === value) {
+        return CATEGORIES[i].icon + ' ' +
+          (settings.lang === 'bn' ? CATEGORIES[i].bn : CATEGORIES[i].en);
+      }
+    }
+    return value;
+  }
+  function buildCategoryChips() {
+    if (!el.catGroup) return;
+    el.catGroup.innerHTML = '';
+    var values = ['all'];
+    for (var i = 0; i < CATEGORIES.length; i++) values.push(CATEGORIES[i].key);
+    for (var v = 0; v < values.length; v++) {
+      var b = doc.createElement('button');
+      b.type = 'button';
+      b.className = 'seg';
+      b.setAttribute('role', 'radio');
+      b.setAttribute('data-value', values[v]);
+      b.setAttribute('aria-checked', 'false');
+      b.setAttribute('tabindex', '-1');
+      b.textContent = categoryChipLabel(values[v]);
+      el.catGroup.appendChild(b);
+    }
+  }
+  function renderCategoryLabels() {
+    if (!el.catGroup) return;
+    var chips = el.catGroup.querySelectorAll('.seg');
+    for (var i = 0; i < chips.length; i++) {
+      chips[i].textContent = categoryChipLabel(chips[i].getAttribute('data-value'));
+    }
+  }
+
   function syncSettingsUI() {
     // Every segmented control (radiogroup) — aria-checked + roving tabindex,
     // driven generically by each group's data-setting / each option's data-value.
@@ -288,9 +340,10 @@
     try { doc.documentElement.setAttribute('lang', lang === 'bn' ? 'bn' : 'en'); } catch (e) {}
     // Localise the radiogroup aria-labels (not visible text, so not data-i18n).
     var langGroup = el.settings.querySelector('.segmented[data-setting="lang"]');
-    var modeGroup = el.settings.querySelector('.segmented[data-setting="mode"]');
+    var catGroup = el.settings.querySelector('.segmented[data-setting="category"]');
     if (langGroup && dict.fieldLang) langGroup.setAttribute('aria-label', dict.fieldLang);
-    if (modeGroup && dict.fieldAppears) modeGroup.setAttribute('aria-label', dict.fieldAppears);
+    if (catGroup && dict.fieldAppears) catGroup.setAttribute('aria-label', dict.fieldAppears);
+    renderCategoryLabels(); // category chip text is data-driven, not data-i18n
     // On/Off labels live in JS, so refresh them too.
     setToggle(el.toggleSound, settings.sound === 'on');
     setToggle(el.toggleSpeech, settings.speech === 'on');
@@ -379,6 +432,9 @@
     el.gear = doc.getElementById('gear');
     el.toggleSound = doc.getElementById('toggle-sound');
     el.toggleSpeech = doc.getElementById('toggle-speech');
+    el.catGroup = doc.getElementById('cat-group');
+
+    buildCategoryChips(); // fill the category picker from the data
 
     // Input
     global.addEventListener('keydown', onKeyDown, true);

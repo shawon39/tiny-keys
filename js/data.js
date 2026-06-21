@@ -1,10 +1,16 @@
 /*
  * data.js — Curated content for the Baby Keyboard Game.
  *
- * Two pools of items. Each item is { char, en, bn } where:
- *   - char : the emoji glyph shown on screen (also upgraded to a crisp SVG by Twemoji)
- *   - en   : the English word spoken aloud (Web Speech API)
- *   - bn   : the Bangla (Bengali) word spoken aloud when the language is set to বাংলা
+ * Content is organised into CATEGORIES. Each category has:
+ *   - key  : stable id used in settings/localStorage
+ *   - en/bn: the category's name (English / Bangla) shown on its picker chip
+ *   - icon : one emoji shown on the chip
+ *   - items: [{ char, en, bn }]
+ *       char : the emoji glyph shown on screen (upgraded to a crisp SVG by Twemoji)
+ *       en   : English word spoken aloud (Web Speech API)
+ *       bn   : Bangla (বাংলা) word spoken aloud when the language is বাংলা
+ *
+ * app.js also builds a virtual "all" category that mixes every item together.
  *
  * Exposed on the global object so plain <script> tags (no bundler / no modules)
  * keep working when opened directly from disk or served by GitHub Pages.
@@ -12,7 +18,6 @@
 (function (global) {
   'use strict';
 
-  // Friendly, recognisable animals for a two-year-old.
   var ANIMALS = [
     { char: '🐶', en: 'Dog', bn: 'কুকুর' },
     { char: '🐱', en: 'Cat', bn: 'বিড়াল' },
@@ -78,77 +83,196 @@
     { char: '🦔', en: 'Hedgehog', bn: 'শজারু' }
   ];
 
-  // Bright, cheerful general emojis — faces, food, toys, nature.
-  var EMOJIS = [
-    { char: '⭐', en: 'Star', bn: 'তারা' },
-    { char: '🌟', en: 'Sparkle Star', bn: 'ঝলমলে তারা' },
-    { char: '✨', en: 'Sparkles', bn: 'ঝিকিমিকি' },
-    { char: '❤️', en: 'Heart', bn: 'ভালোবাসা' },
-    { char: '🧡', en: 'Orange Heart', bn: 'কমলা হৃদয়' },
-    { char: '💛', en: 'Yellow Heart', bn: 'হলুদ হৃদয়' },
-    { char: '💚', en: 'Green Heart', bn: 'সবুজ হৃদয়' },
-    { char: '💙', en: 'Blue Heart', bn: 'নীল হৃদয়' },
-    { char: '💜', en: 'Purple Heart', bn: 'বেগুনি হৃদয়' },
-    { char: '🌈', en: 'Rainbow', bn: 'রংধনু' },
-    { char: '☀️', en: 'Sun', bn: 'সূর্য' },
-    { char: '🌙', en: 'Moon', bn: 'চাঁদ' },
-    { char: '☁️', en: 'Cloud', bn: 'মেঘ' },
-    { char: '⚡', en: 'Lightning', bn: 'বিদ্যুৎ' },
-    { char: '🔥', en: 'Fire', bn: 'আগুন' },
-    { char: '❄️', en: 'Snowflake', bn: 'তুষার' },
-    { char: '🌸', en: 'Flower', bn: 'ফুল' },
-    { char: '🌻', en: 'Sunflower', bn: 'সূর্যমুখী' },
-    { char: '🌷', en: 'Tulip', bn: 'টিউলিপ' },
-    { char: '🍀', en: 'Clover', bn: 'ক্লোভার' },
-    { char: '🎈', en: 'Balloon', bn: 'বেলুন' },
-    { char: '🎉', en: 'Party', bn: 'উৎসব' },
-    { char: '🎊', en: 'Confetti', bn: 'কনফেটি' },
-    { char: '🎀', en: 'Bow', bn: 'ফিতা' },
-    { char: '🎁', en: 'Present', bn: 'উপহার' },
-    { char: '⚽', en: 'Ball', bn: 'বল' },
-    { char: '🏀', en: 'Basketball', bn: 'বাস্কেটবল' },
-    { char: '🎨', en: 'Paint', bn: 'রং' },
-    { char: '🚗', en: 'Car', bn: 'গাড়ি' },
-    { char: '🚕', en: 'Taxi', bn: 'ট্যাক্সি' },
-    { char: '🚒', en: 'Fire Truck', bn: 'দমকল' },
-    { char: '🚜', en: 'Tractor', bn: 'ট্রাক্টর' },
-    { char: '✈️', en: 'Airplane', bn: 'বিমান' },
-    { char: '🚀', en: 'Rocket', bn: 'রকেট' },
-    { char: '🚂', en: 'Train', bn: 'ট্রেন' },
-    { char: '⛵', en: 'Boat', bn: 'নৌকা' },
-    { char: '🚲', en: 'Bicycle', bn: 'সাইকেল' },
-    { char: '🍎', en: 'Apple', bn: 'আপেল' },
+  var FAMILY = [
+    { char: '👩', en: 'Mother', bn: 'মা' },
+    { char: '👨', en: 'Father', bn: 'বাবা' },
+    { char: '👶', en: 'Baby', bn: 'বাবু' },
+    { char: '👦', en: 'Brother', bn: 'ভাই' },
+    { char: '👧', en: 'Sister', bn: 'বোন' },
+    { char: '👴', en: "Grandpa (Father's side)", bn: 'দাদা' },
+    { char: '👵', en: "Grandma (Father's side)", bn: 'দাদি' },
+    { char: '🧓', en: "Grandpa (Mother's side)", bn: 'নানা' },
+    { char: '🧕', en: "Grandma (Mother's side)", bn: 'নানি' },
+    { char: '🧔', en: "Uncle (Father's brother)", bn: 'চাচা' },
+    { char: '👨‍🦰', en: "Uncle (Mother's brother)", bn: 'মামা' },
+    { char: '👩‍🦰', en: "Aunt (Mother's sister)", bn: 'খালা' },
+    { char: '👩‍🦱', en: "Aunt (Father's sister)", bn: 'ফুপু' },
+    { char: '🧒', en: 'Child', bn: 'খোকা' },
+    { char: '👨‍👩‍👧‍👦', en: 'Family', bn: 'পরিবার' },
+    { char: '❤️', en: 'Love', bn: 'ভালোবাসা' }
+  ];
+
+  var FRUITS = [
+    { char: '🥭', en: 'Mango', bn: 'আম' },
     { char: '🍌', en: 'Banana', bn: 'কলা' },
-    { char: '🍓', en: 'Strawberry', bn: 'স্ট্রবেরি' },
+    { char: '🍎', en: 'Apple', bn: 'আপেল' },
+    { char: '🍏', en: 'Green Apple', bn: 'সবুজ আপেল' },
+    { char: '🍊', en: 'Orange', bn: 'কমলা' },
     { char: '🍇', en: 'Grapes', bn: 'আঙুর' },
     { char: '🍉', en: 'Watermelon', bn: 'তরমুজ' },
-    { char: '🍊', en: 'Orange', bn: 'কমলা' },
+    { char: '🍍', en: 'Pineapple', bn: 'আনারস' },
+    { char: '🥥', en: 'Coconut', bn: 'নারকেল' },
+    { char: '🍐', en: 'Pear', bn: 'নাশপাতি' },
+    { char: '🍓', en: 'Strawberry', bn: 'স্ট্রবেরি' },
     { char: '🍒', en: 'Cherry', bn: 'চেরি' },
-    { char: '🍦', en: 'Ice Cream', bn: 'আইসক্রিম' },
-    { char: '🍩', en: 'Donut', bn: 'ডোনাট' },
-    { char: '🍪', en: 'Cookie', bn: 'কুকি' },
-    { char: '🎂', en: 'Cake', bn: 'কেক' },
+    { char: '🍋', en: 'Lemon', bn: 'লেবু' },
+    { char: '🍑', en: 'Peach', bn: 'পীচ' },
+    { char: '🥝', en: 'Kiwi', bn: 'কিউই' },
+    { char: '🫐', en: 'Blueberry', bn: 'ব্লুবেরি' },
+    { char: '🍈', en: 'Melon', bn: 'বাঙ্গি' },
+    { char: '🥑', en: 'Avocado', bn: 'অ্যাভোকাডো' },
+    { char: '🫒', en: 'Olive', bn: 'জলপাই' }
+  ];
+
+  var VEGETABLES = [
+    { char: '🥕', en: 'Carrot', bn: 'গাজর' },
+    { char: '🥔', en: 'Potato', bn: 'আলু' },
+    { char: '🍅', en: 'Tomato', bn: 'টমেটো' },
+    { char: '🍆', en: 'Eggplant', bn: 'বেগুন' },
+    { char: '🌽', en: 'Corn', bn: 'ভুট্টা' },
+    { char: '🥒', en: 'Cucumber', bn: 'শসা' },
+    { char: '🌶️', en: 'Chili', bn: 'মরিচ' },
+    { char: '🫑', en: 'Bell Pepper', bn: 'ক্যাপসিকাম' },
+    { char: '🧅', en: 'Onion', bn: 'পেঁয়াজ' },
+    { char: '🧄', en: 'Garlic', bn: 'রসুন' },
+    { char: '🥬', en: 'Leafy Green', bn: 'শাক' },
+    { char: '🥦', en: 'Broccoli', bn: 'ব্রকলি' },
+    { char: '🍄', en: 'Mushroom', bn: 'মাশরুম' },
+    { char: '🫛', en: 'Peas', bn: 'মটরশুঁটি' },
+    { char: '🫚', en: 'Ginger', bn: 'আদা' },
+    { char: '🎃', en: 'Pumpkin', bn: 'কুমড়া' }
+  ];
+
+  var FOOD = [
+    { char: '🍚', en: 'Rice', bn: 'ভাত' },
+    { char: '🍞', en: 'Bread', bn: 'রুটি' },
+    { char: '🥚', en: 'Egg', bn: 'ডিম' },
+    { char: '🍖', en: 'Meat', bn: 'মাংস' },
+    { char: '🍗', en: 'Chicken Leg', bn: 'মুরগির রান' },
+    { char: '🍛', en: 'Curry', bn: 'তরকারি' },
+    { char: '🥛', en: 'Milk', bn: 'দুধ' },
+    { char: '🍵', en: 'Tea', bn: 'চা' },
+    { char: '🧃', en: 'Juice', bn: 'জুস' },
+    { char: '🍜', en: 'Noodles', bn: 'নুডলস' },
+    { char: '🧀', en: 'Cheese', bn: 'পনির' },
+    { char: '🍯', en: 'Honey', bn: 'মধু' },
     { char: '🍕', en: 'Pizza', bn: 'পিজা' },
+    { char: '🍔', en: 'Burger', bn: 'বার্গার' },
+    { char: '🍦', en: 'Ice Cream', bn: 'আইসক্রিম' },
+    { char: '🎂', en: 'Cake', bn: 'কেক' },
+    { char: '🧁', en: 'Cupcake', bn: 'কাপকেক' },
+    { char: '🍫', en: 'Chocolate', bn: 'চকলেট' },
+    { char: '🍪', en: 'Cookie', bn: 'বিস্কুট' },
     { char: '🍭', en: 'Lollipop', bn: 'ললিপপ' },
-    { char: '🍬', en: 'Candy', bn: 'ক্যান্ডি' },
-    { char: '😀', en: 'Happy Face', bn: 'হাসিমুখ' },
+    { char: '🍩', en: 'Donut', bn: 'ডোনাট' },
+    { char: '🍬', en: 'Candy', bn: 'লজেন্স' }
+  ];
+
+  var VEHICLES = [
+    { char: '🚗', en: 'Car', bn: 'গাড়ি' },
+    { char: '🚕', en: 'Taxi', bn: 'ট্যাক্সি' },
+    { char: '🚌', en: 'Bus', bn: 'বাস' },
+    { char: '🚚', en: 'Truck', bn: 'ট্রাক' },
+    { char: '🚜', en: 'Tractor', bn: 'ট্রাক্টর' },
+    { char: '🛺', en: 'Auto Rickshaw', bn: 'অটো' },
+    { char: '🚑', en: 'Ambulance', bn: 'অ্যাম্বুলেন্স' },
+    { char: '🚒', en: 'Fire Truck', bn: 'দমকল গাড়ি' },
+    { char: '🚓', en: 'Police Car', bn: 'পুলিশ গাড়ি' },
+    { char: '🚲', en: 'Bicycle', bn: 'সাইকেল' },
+    { char: '🏍️', en: 'Motorcycle', bn: 'মোটরসাইকেল' },
+    { char: '🛵', en: 'Scooter', bn: 'স্কুটার' },
+    { char: '🚂', en: 'Train', bn: 'ট্রেন' },
+    { char: '🚆', en: 'Metro Train', bn: 'মেট্রো রেল' },
+    { char: '✈️', en: 'Plane', bn: 'বিমান' },
+    { char: '🚁', en: 'Helicopter', bn: 'হেলিকপ্টার' },
+    { char: '🚀', en: 'Rocket', bn: 'রকেট' },
+    { char: '⛵', en: 'Boat', bn: 'নৌকা' },
+    { char: '🚢', en: 'Ship', bn: 'জাহাজ' },
+    { char: '⛴️', en: 'Ferry', bn: 'লঞ্চ' },
+    { char: '🚤', en: 'Speedboat', bn: 'স্পিডবোট' },
+    { char: '🚐', en: 'Van', bn: 'মাইক্রোবাস' }
+  ];
+
+  var NATURE = [
+    { char: '☀️', en: 'Sun', bn: 'সূর্য' },
+    { char: '🌙', en: 'Moon', bn: 'চাঁদ' },
+    { char: '⭐', en: 'Star', bn: 'তারা' },
+    { char: '🌈', en: 'Rainbow', bn: 'রংধনু' },
+    { char: '☁️', en: 'Cloud', bn: 'মেঘ' },
+    { char: '🌧️', en: 'Rain', bn: 'বৃষ্টি' },
+    { char: '❄️', en: 'Snow', bn: 'তুষার' },
+    { char: '⚡', en: 'Lightning', bn: 'বাজ' },
+    { char: '🔥', en: 'Fire', bn: 'আগুন' },
+    { char: '💧', en: 'Water Drop', bn: 'পানির ফোঁটা' },
+    { char: '🌊', en: 'Wave', bn: 'ঢেউ' },
+    { char: '🌸', en: 'Flower', bn: 'ফুল' },
+    { char: '🌹', en: 'Rose', bn: 'গোলাপ' },
+    { char: '🌻', en: 'Sunflower', bn: 'সূর্যমুখী' },
+    { char: '🌷', en: 'Tulip', bn: 'টিউলিপ ফুল' },
+    { char: '🌳', en: 'Tree', bn: 'গাছ' },
+    { char: '🍃', en: 'Leaf', bn: 'পাতা' },
+    { char: '⛰️', en: 'Mountain', bn: 'পাহাড়' },
+    { char: '🌍', en: 'Earth', bn: 'পৃথিবী' }
+  ];
+
+  var FACES = [
+    { char: '😀', en: 'Smiley Face', bn: 'হাসিমুখ' },
     { char: '😄', en: 'Big Smile', bn: 'বড় হাসি' },
-    { char: '😁', en: 'Grin', bn: 'খুশি হাসি' },
-    { char: '🥰', en: 'Love Face', bn: 'আদুরে মুখ' },
-    { char: '😍', en: 'Hearts Eyes', bn: 'হৃদয় চোখ' },
+    { char: '😁', en: 'Grinning Face', bn: 'দাঁত বের করা হাসি' },
+    { char: '😊', en: 'Happy Face', bn: 'মিষ্টি হাসি' },
+    { char: '🤣', en: 'Laughing', bn: 'হাসতে হাসতে' },
+    { char: '🥰', en: 'Loving Face', bn: 'আদুরে মুখ' },
+    { char: '😍', en: 'Heart Eyes', bn: 'চোখে ভালোবাসা' },
     { char: '🤩', en: 'Star Eyes', bn: 'তারা চোখ' },
     { char: '😎', en: 'Cool Face', bn: 'দারুণ মুখ' },
-    { char: '🤗', en: 'Hug', bn: 'আলিঙ্গন' },
-    { char: '😋', en: 'Yummy', bn: 'মজাদার' },
-    { char: '🥳', en: 'Party Face', bn: 'খুশি মুখ' },
-    { char: '👋', en: 'Wave', bn: 'টাটা' },
-    { char: '👍', en: 'Thumbs Up', bn: 'শাবাশ' },
-    { char: '👏', en: 'Clap', bn: 'হাততালি' },
-    { char: '🙌', en: 'Hooray', bn: 'হুররে' }
+    { char: '😋', en: 'Yummy Face', bn: 'মজার মুখ' },
+    { char: '😜', en: 'Silly Face', bn: 'দুষ্টু মুখ' },
+    { char: '😮', en: 'Surprised Face', bn: 'অবাক মুখ' },
+    { char: '😴', en: 'Sleepy Face', bn: 'ঘুমন্ত মুখ' },
+    { char: '😭', en: 'Crying Face', bn: 'কান্না' },
+    { char: '😡', en: 'Angry Face', bn: 'রাগী মুখ' },
+    { char: '❤️', en: 'Red Heart', bn: 'লাল মন' },
+    { char: '💛', en: 'Yellow Heart', bn: 'হলুদ মন' },
+    { char: '💙', en: 'Blue Heart', bn: 'নীল মন' },
+    { char: '✨', en: 'Sparkles', bn: 'ঝিকিমিকি' }
+  ];
+
+  var THINGS = [
+    { char: '🎈', en: 'Balloon', bn: 'বেলুন' },
+    { char: '🎁', en: 'Gift', bn: 'উপহার' },
+    { char: '⚽', en: 'Ball', bn: 'বল' },
+    { char: '🧸', en: 'Teddy Bear', bn: 'টেডি' },
+    { char: '🪁', en: 'Kite', bn: 'ঘুড়ি' },
+    { char: '📚', en: 'Book', bn: 'বই' },
+    { char: '✏️', en: 'Pencil', bn: 'পেন্সিল' },
+    { char: '🖍️', en: 'Crayon', bn: 'রঙ পেন্সিল' },
+    { char: '🎨', en: 'Paint', bn: 'রং' },
+    { char: '⏰', en: 'Clock', bn: 'ঘড়ি' },
+    { char: '☂️', en: 'Umbrella', bn: 'ছাতা' },
+    { char: '🔑', en: 'Key', bn: 'চাবি' },
+    { char: '💡', en: 'Light', bn: 'বাতি' },
+    { char: '🔔', en: 'Bell', bn: 'ঘণ্টা' },
+    { char: '👑', en: 'Crown', bn: 'মুকুট' },
+    { char: '🎵', en: 'Music', bn: 'গান' },
+    { char: '📱', en: 'Phone', bn: 'ফোন' },
+    { char: '📷', en: 'Camera', bn: 'ক্যামেরা' },
+    { char: '🥁', en: 'Drum', bn: 'ঢোল' },
+    { char: '🎉', en: 'Party', bn: 'উৎসব' },
+    { char: '🎒', en: 'Bag', bn: 'ব্যাগ' },
+    { char: '🧩', en: 'Puzzle', bn: 'পাজল' }
   ];
 
   global.GAME_DATA = {
-    animals: ANIMALS,
-    emojis: EMOJIS
+    categories: [
+      { key: 'animals', en: 'Animals', bn: 'প্রাণী', icon: '🐶', items: ANIMALS },
+      { key: 'family', en: 'Family', bn: 'পরিবার', icon: '👨‍👩‍👧‍👦', items: FAMILY },
+      { key: 'fruits', en: 'Fruits', bn: 'ফল', icon: '🍎', items: FRUITS },
+      { key: 'vegetables', en: 'Vegetables', bn: 'সবজি', icon: '🥕', items: VEGETABLES },
+      { key: 'food', en: 'Food', bn: 'খাবার', icon: '🍚', items: FOOD },
+      { key: 'vehicles', en: 'Vehicles', bn: 'যানবাহন', icon: '🚗', items: VEHICLES },
+      { key: 'nature', en: 'Nature', bn: 'প্রকৃতি', icon: '🌳', items: NATURE },
+      { key: 'faces', en: 'Faces', bn: 'মুখ', icon: '😀', items: FACES },
+      { key: 'things', en: 'Things', bn: 'জিনিস', icon: '🧸', items: THINGS }
+    ]
   };
 })(window);
